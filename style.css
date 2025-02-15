@@ -1,0 +1,17 @@
+.grid-circle {
+    fill: none;
+    stroke: #ddd;
+    stroke-width: 0.5;
+}
+.temp-label {
+    font-size: 10px;
+    fill: #666;
+}
+.time-label {
+    font-size: 10px;
+    fill: #666;
+}
+
+body {
+    vertical-align: middle;
+}
