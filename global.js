@@ -2,6 +2,7 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm";
 
 async function radial_plot() {
     const width = 800, height = 800, margin = 60;
+    // The file names, change if you need to for your file configs
     const files = ["Data/S1/Final/HR.csv", "Data/S2/Final/HR.csv", "Data/S3/Final/HR.csv", "Data/S4/Final/HR.csv", "Data/S5/Final/HR.csv", "Data/S6/Final/HR.csv", "Data/S7/Final/HR.csv", "Data/S8/Final/HR.csv", "Data/S9/Final/HR.csv", "Data/S10/Final/HR.csv"]; // Add your filenames here
 
     // Create SVG container
@@ -13,7 +14,7 @@ async function radial_plot() {
     // Load and process multiple files
     Promise.all(files.map(file => d3.text(file)))
         .then(rawDataArray => {
-            // Parse all files
+            // Parses all files
             const datasets = rawDataArray.map(rawData => {
                 const lines = rawData.split('\n');
                 return {
@@ -31,7 +32,7 @@ async function radial_plot() {
                 throw new Error("Different start times or sample rates");
             }
 
-            // Calculate row means (ensure same-length files)
+            // Calculate row means 
             const minLength = Math.min(...datasets.map(d => d.hrValues.length));
             const aggregatedData = Array.from({length: minLength}, (_, i) => {
                 const sum = datasets.reduce((acc, d) => acc + d.hrValues[i], 0);
@@ -88,7 +89,6 @@ async function radial_plot() {
                 .attr("fill", "none")
                 .attr("stroke", "#ccc");
 
-            // Add axes (similar to previous example)
             axis.selectAll(".axis-label")
                 .data(axisCircles)
                 .enter().append("text")
@@ -96,7 +96,6 @@ async function radial_plot() {
                 .attr("y", d => -radiusScale(d))
                 .text(d => `${d} BPM`);
                 
-            // Add time markers
 
             const timeScale = d3.scaleTime()
                 .domain([
@@ -106,7 +105,6 @@ async function radial_plot() {
                 ])
                 .range([0, 2 * Math.PI]);
 
-            // Draw time axis (now using first.initialTime)
             const timeAxis = d3.axisLeft()
                 .scale(timeScale)
                 .ticks(12)
@@ -119,6 +117,11 @@ async function radial_plot() {
                 .attr("transform", d => `rotate(${93 - timeScale(d) * 180/Math.PI})`)
                 .attr("x", 375)
                 .style("text-anchor", "middle");
+            // NOTE: the axes for the circles are based on min, mean, and max of aggregatedData
+            // Might want to change that to something else
+            // THE TIMES LABELS ARE PROBABLY NOT CORRECT, but it's as close as I think I can get
+            // idk how to flip the time labels
+            // the data has times before the final might need to take those out or take them into account.
         });
 };
 
