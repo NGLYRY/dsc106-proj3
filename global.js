@@ -1,111 +1,125 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm";
 
-// Set up dimensions
-async function radialplot() {
-    const width = 1200;
-    const height = 1200;
-    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
-    const chartSize = Math.min(width, height) - Math.max(margin.top + margin.bottom, margin.left + margin.right);
+async function radial_plot() {
+    const width = 800, height = 800, margin = 60;
+    const files = ["Data/S1/Final/HR.csv", "Data/S2/Final/HR.csv", "Data/S3/Final/HR.csv", "Data/S4/Final/HR.csv", "Data/S5/Final/HR.csv", "Data/S6/Final/HR.csv", "Data/S7/Final/HR.csv", "Data/S8/Final/HR.csv", "Data/S9/Final/HR.csv", "Data/S10/Final/HR.csv"]; // Add your filenames here
 
     // Create SVG container
-    const svg = d3.select("#radial-chart")
+    const svg = d3.select(".container")
         .append("svg")
         .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", `translate(${width/2}, ${height/2})`);
+        .attr("height", height);
 
-    // List of CSV files to load
-    const csvFiles = ["Data/S1/Final/TEMP.csv", "Data/S2/Final/TEMP.csv", "Data/S3/Final/TEMP.csv", "Data/S4/Final/TEMP.csv", "Data/S5/Final/TEMP.csv", "Data/S6/Final/TEMP.csv", "Data/S7/Final/TEMP.csv", "Data/S8/Final/TEMP.csv", "Data/S9/Final/TEMP.csv", "Data/S10/Final/TEMP.csv"];
+    // Load and process multiple files
+    Promise.all(files.map(file => d3.text(file)))
+        .then(rawDataArray => {
+            // Parse all files
+            const datasets = rawDataArray.map(rawData => {
+                const lines = rawData.split('\n');
+                return {
+                    initialTime: parseInt(lines[0]),
+                    sampleRate: parseFloat(lines[1]),
+                    hrValues: lines.slice(2, 20002).map(parseFloat)
+                };
+            });
 
-    // Load and process data from multiple CSV files
-    const dataPromises = csvFiles.map(file => d3.text(file).then(text => {
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        const initialTime = parseInt(lines[0]) * 1000; // Convert to milliseconds, <- THIS IS SUPER WRONG
-        const sampleRate = parseFloat(lines[1]);
-        const temperatures = lines.slice(2).map(parseFloat);
+            // Verify consistent sampling parameters
+            const first = datasets[0];
+            if (!datasets.every(d => 
+                d.initialTime === first.initialTime && 
+                d.sampleRate === first.sampleRate)) {
+                throw new Error("Different start times or sample rates");
+            }
 
-        // Array with time and temperature values
-        return temperatures.map((temp, i) => ({
-            time: initialTime + (i * 1000) / sampleRate,
-            temperature: temp
-        }));
-    }));
+            // Calculate row means (ensure same-length files)
+            const minLength = Math.min(...datasets.map(d => d.hrValues.length));
+            const aggregatedData = Array.from({length: minLength}, (_, i) => {
+                const sum = datasets.reduce((acc, d) => acc + d.hrValues[i], 0);
+                const value = sum / datasets.length;
+                return {
+                    value: value,
+                    angle: (i / minLength) * 2 * Math.PI
+                };
+            });
 
-    const allData = await Promise.all(dataPromises);
+            // Calculate the mean of aggregatedData values
+            const meanValue = d3.mean(aggregatedData, d => d.value);
+            console.log("Mean value of aggregatedData:", meanValue);
 
-    // Flatten the data array
-    const flatData = allData.flat();
+            // Replace NaN values with the mean value
+            aggregatedData.forEach(d => {
+                if (isNaN(d.value)) {
+                    d.value = meanValue;
+                }
+            });
 
-    // Set up scales
-    const angleScale = d3.scaleLinear()
-        .domain([flatData[0].time, flatData[flatData.length - 1].time])
-        .range([0, 2 * Math.PI]);
+            // Create scales
+            const radiusScale = d3.scaleLinear()
+                .domain([d3.min(aggregatedData, d => d.value), 
+                        d3.max(aggregatedData, d => d.value)])
+                .range([width/4, width/2 - margin]);
 
-    const radiusScale = d3.scaleLinear()
-        .domain([d3.min(flatData, d => d.temperature), d3.max(flatData, d => d.temperature)])
-        .range([30, chartSize/2]);
+            // Radial line generator
+            const lineGenerator = d3.lineRadial()
+                .angle(d => d.angle)
+                .radius(d => radiusScale(d.value));
 
-    // Create radial line generator
-    const line = d3.lineRadial()
-        .angle(d => angleScale(d.time))
-        .radius(d => radiusScale(d.temperature))
-        .curve(d3.curveLinear);
+            // Draw aggregated line
+            svg.append("path")
+                .datum(aggregatedData)
+                .attr("d", lineGenerator)
+                .attr("fill", "none")
+                .attr("stroke", "#e41a1c")
+                .attr("stroke-width", 2)
+                .attr("transform", `translate(${width/2},${height/2})`);
 
-    // Define a color scale
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            // Add circular axes
+            const axisCircles = [d3.min(radiusScale.domain()), 
+                               d3.mean(radiusScale.domain()), 
+                               d3.max(radiusScale.domain())];
 
-    // Draw temperature grid circles
-    const tempTicks = radiusScale.ticks(4);
-    svg.selectAll(".grid-circle")
-        .data(tempTicks)
-        .enter().append("circle")
-        .attr("class", "grid-circle")
-        .attr("r", d => radiusScale(d))
-        .attr("stroke", "#eee");
+            const axis = svg.append("g")
+                .attr("transform", `translate(${width/2},${height/2})`);
 
-    // Add temperature labels
-    svg.selectAll(".temp-label")
-        .data(tempTicks)
-        .enter().append("text")
-        .attr("class", "temp-label")
-        .attr("x", d => radiusScale(d) + 5)
-        .attr("y", 0)
-        .text(d => `${d}°C`);
+            axis.selectAll("circle")
+                .data(axisCircles)
+                .enter().append("circle")
+                .attr("r", d => radiusScale(d))
+                .attr("fill", "none")
+                .attr("stroke", "#ccc");
 
-    // Draw main paths for each dataset with different colors
-    allData.forEach((data, i) => {
-        svg.append("path")
-            .datum(data)
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", colorScale(i))
-            .attr("stroke-width", 2);
-    });
+            // Add axes (similar to previous example)
+            axis.selectAll(".axis-label")
+                .data(axisCircles)
+                .enter().append("text")
+                .attr("text-anchor", "middle")
+                .attr("y", d => -radiusScale(d))
+                .text(d => `${d} BPM`);
+                
+            // Add time markers
 
-    // Add time labels
-    const timeTicks = flatData.filter(d => {
-        const date = new Date(d.time);
-        const hours = date.getUTCHours();
-        return hours >= 9 && hours <= 13;
-    });
+            const timeScale = d3.scaleTime()
+                .domain([
+                    new Date(first.initialTime * 1000),
+                    new Date((first.initialTime + 
+                            (minLength / first.sampleRate)) * 1000)
+                ])
+                .range([0, 2 * Math.PI]);
 
-    svg.selectAll(".time-label")
-        .data(timeTicks)
-        .enter().append("text")
-        .attr("class", "time-label")
-        .attr("text-anchor", d => {
-            const angle = angleScale(d.time);
-            return (angle > Math.PI/2 && angle < 3*Math.PI/2) ? "end" : "start";
-        })
-        .attr("x", d => Math.sin(angleScale(d.time)) * (chartSize/2 + 10))
-        .attr("y", d => -Math.cos(angleScale(d.time)) * (chartSize/2 + 10))
-        .text(d => {
-            const date = new Date(d.time);
-            const hours = date.getUTCHours();
-            const minutes = date.getUTCMinutes();
-            return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+            // Draw time axis (now using first.initialTime)
+            const timeAxis = d3.axisLeft()
+                .scale(timeScale)
+                .ticks(12)
+                .tickFormat(d3.timeFormat("%H:%M:%S"));
+
+            svg.append("g")
+                .attr("transform", `translate(${width/2},${height/2})`)
+                .call(timeAxis)
+                .selectAll("text")
+                .attr("transform", d => `rotate(${93 - timeScale(d) * 180/Math.PI})`)
+                .attr("x", 375)
+                .style("text-anchor", "middle");
         });
-}
+};
 
-radialplot();
+radial_plot();
