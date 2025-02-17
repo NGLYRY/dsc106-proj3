@@ -126,3 +126,10 @@ async function radial_plot() {
 };
 
 radial_plot();
+
+function updateHeartbeat(bpm) {
+    const duration = 10 / bpm; // Convert BPM to seconds
+    document.documentElement.style.setProperty('--beat-duration', `${duration}s`);
+}
+
+updateHeartbeat(10);
