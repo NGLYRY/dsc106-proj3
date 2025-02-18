@@ -10,13 +10,24 @@ async function radial_plot() {
         .attr("width", width)
         .attr("height", height);
 
+    const meanHRText = svg.append("text") //puts meanHR text in the middle of the radial plot
+        .attr("id", "meanHRText")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em") 
+        .attr("font-size", "12px")
+        .text("Mean heart rate: 0 BPM");
+
     const rawDataArray = await Promise.all(files.map(file => d3.text(file)));
     const datasets = rawDataArray.map(rawData => {
         const lines = rawData.split('\n');
         return {
             initialTime: parseInt(lines[0]),
             sampleRate: parseFloat(lines[1]),
-            hrValues: lines.slice(2).map(parseFloat)
+            hrValues: lines.slice(2)
+                .filter(line => line.trim() !== "")
+                .map(parseFloat) //only valid strings are parsed 
         };
     });
 
@@ -25,15 +36,36 @@ async function radial_plot() {
         throw new Error("Different start times or sample rates");
     }
 
-    const minLength = Math.min(...datasets.map(d => d.hrValues.length));
+    // Define the start and end times in seconds since the epoch
+    const startTime = new Date(first.initialTime * 1000);
+    startTime.setHours(8, 40, 0, 0);
+    const endTime = new Date(first.initialTime * 1000);
+    endTime.setHours(12, 20, 0, 0);
 
-    const maxBPM = d3.max(datasets, d => d3.max(d.hrValues));
+    const startSeconds = startTime.getTime() / 1000;
+    const endSeconds = endTime.getTime() / 1000;
+
+    // Filter the data based on the time range
+    const filteredDatasets = datasets.map(dataset => {
+        const filteredHrValues = dataset.hrValues.filter((_, i) => {
+            const currentTime = dataset.initialTime + i / dataset.sampleRate;
+            return currentTime >= startSeconds && currentTime <= endSeconds;
+        });
+        return {
+            ...dataset,
+            hrValues: filteredHrValues
+        };
+    });
+
+    const minLength = Math.min(...filteredDatasets.map(d => d.hrValues.length));
+
+    const maxBPM = d3.max(filteredDatasets, d => d3.max(d.hrValues));
     const radiusScale = d3.scaleLinear()
         .domain([0, maxBPM]) 
         .range([0, width / 2 - margin]); 
 
     const angleScale = d3.scaleLinear()
-        .domain([0, datasets.length])
+        .domain([0, filteredDatasets.length])
         .range([0, 2 * Math.PI]);
 
     const lineGenerator = d3.lineRadial()
@@ -42,7 +74,7 @@ async function radial_plot() {
         .curve(d3.curveLinearClosed); 
 
     const path = svg.append("path")
-        .datum(datasets.map(d => d.hrValues[0]).concat(datasets[0].hrValues[0])) // Close the loop
+        .datum(filteredDatasets.map(d => d.hrValues[0]).concat(filteredDatasets[0].hrValues[0])) // Close the loop
         .attr("d", lineGenerator)
         .attr("fill", "none")
         .attr("stroke", "#e41a1c")
@@ -82,19 +114,26 @@ async function radial_plot() {
         const index = +this.value;
         updateRadialPlot(index);
         updateTimeDisplay(index);
+        updateMeanHeartRate(index);
     });
 
     function updateRadialPlot(index) {
-        const updatedData = datasets.map(d => d.hrValues[index]).concat(datasets[0].hrValues[index]); 
+        const updatedData = filteredDatasets.map(d => d.hrValues[index]).concat(filteredDatasets[0].hrValues[index]); 
         path.datum(updatedData)
             .attr("d", lineGenerator);
     }
 
     function updateTimeDisplay(index) {
-        const timeInSeconds = first.initialTime + index; 
+        const timeInSeconds = startSeconds + index; 
         const date = new Date(timeInSeconds * 1000);
         const formattedTime = d3.timeFormat("%H:%M:%S")(date);
         d3.select("#timeDisplay").text(`Time: ${formattedTime}`);
+    }
+    
+    // appends text to show the mean heart rate of the datasets in the middle of plot
+    function updateMeanHeartRate(index) {
+        const meanHR = d3.mean(filteredDatasets.map(d => d.hrValues[index]));
+        meanHRText.text(`Mean heart rate: ${meanHR.toFixed(2)} BPM`);
     }
 }
 
