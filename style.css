@@ -99,7 +99,7 @@ body {
 }
 
 .article-section {
-    flex: 0 0 300px;
+    flex: 0 0 750px;
     padding: 20px;
     margin-top: 0; /* Remove top margin */
     margin-left: 40px; /* Add space between graph and article */
