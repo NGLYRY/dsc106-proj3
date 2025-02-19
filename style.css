@@ -188,7 +188,7 @@ body {
     text-align: center;
     padding: 8px;
     font-size: 12px;
-    background: rgb(0, 0, 0);
+    background: white(0, 0, 0);
     border: 1px solid #ddd;
     border-radius: 4px;
     pointer-events: none;
