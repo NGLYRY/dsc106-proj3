@@ -10,16 +10,21 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="heartbeat">
-            <i class="fa fa-heartbeat" aria-hidden="true"></i>
+    <h1>Radial Heart Rate Chart</h1>
+    <div class="page-wrapper">
+        <div class="container">
+            <div class="heartbeat">
+                <i class="fas fa-heart" aria-hidden="true"></i>
+            </div>
         </div>
-    </div>
-    <div class="slider-container">
-        <span id="startLabel">Start of Exam</span>
-        <input type="range" id="timeSlider" min="0" max="20000" step="1" value="0">
-        <span id="endLabel">End of Exam</span>
-        <span id="timeDisplay">Time: 08:40:00</span>
+        <div class="slider-container">
+            <span id="startLabel">Start of Exam</span>
+            <input type="range" id="timeSlider" min="0" max="20000" step="1" value="0">
+            <span id="endLabel">End of Exam</span>
+            <span id="timeDisplay">Time: 08:40:00</span>
+            <span id="annotationMark" class="time-annotation"></span>
+            <button id="playButton">Play</button>
+        </div>
     </div>
 </body>
 </html>
