@@ -1,3 +1,26 @@
+h1 {
+    text-align: left;
+    position: absolute;
+    left: 90px;  /* Match the page-wrapper padding-left */
+    top: 20px;
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    width: 800px;  /* Match the container width */
+}
+
+h2 {
+    text-align: center;
+    position: absolute;
+    left: 20px;
+    top: 60px;
+    margin: 0;
+    font-size: 18px;
+    color: #666;
+    width: 800px;
+    font-weight: normal;
+}
+
 .grid-circle {
     fill: none;
     stroke: #000000;
@@ -49,17 +72,23 @@ body {
     position: relative;
     width: 100%;
     height: 100vh;
+    padding-left: 50px;
+    padding-top: 120px;
+    display: flex;
+    flex-direction: row;
+
+}
+
+.graph-section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;  /* Align items to the left */
-    padding-left: 50px;  /* Add some padding from the left edge */
+    flex: 0 0 auto;
 }
 
 .container {
-    position: relative;  /* Make container the positioning context */
+    position: relative;
     width: 800px;
     height: 800px;
-    margin-right: auto;
 }
 
 .slider-container {
@@ -69,6 +98,21 @@ body {
     position: relative;
 }
 
+.article-section {
+    flex: 0 0 300px;
+    padding: 20px;
+    margin-top: 0; /* Remove top margin */
+    margin-left: 40px; /* Add space between graph and article */
+    height: fit-content;
+}
+
+.slider-container {
+    width: 800px;
+    margin-top: 20px;
+    text-align: center;
+    position: relative;
+    align-self: flex-start;  /* Align with the left side */
+}
 #timeSlider {
     width: 100%;
     height: 25px;

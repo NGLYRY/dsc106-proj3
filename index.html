@@ -10,20 +10,32 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <h1>Radial Heart Rate Chart</h1>
+    <h1>Finals Frenzy: When Do Students Feel the Most Pressure?</h1>
+    <h2>Students see the highest BPM levels at the start and 30 minutes before the end of the exam.</h2>
     <div class="page-wrapper">
-        <div class="container">
-            <div class="heartbeat">
-                <i class="fas fa-heart" aria-hidden="true"></i>
+        <div class="graph-section">
+            <div class="container">
+                <div class="heartbeat">
+                    <i class="fas fa-heart" aria-hidden="true"></i>
+                </div>
+            </div>
+            <div class="slider-container">
+                <span id="startLabel">Start of Exam</span>
+                <input type="range" id="timeSlider" min="0" max="20000" step="1" value="0">
+                <span id="endLabel">End of Exam</span>
+                <span id="timeDisplay">Time: 08:40:00</span>
+                <span id="annotationMark" class="time-annotation"></span>
+                <button id="playButton">Play</button>
             </div>
         </div>
-        <div class="slider-container">
-            <span id="startLabel">Start of Exam</span>
-            <input type="range" id="timeSlider" min="0" max="20000" step="1" value="0">
-            <span id="endLabel">End of Exam</span>
-            <span id="timeDisplay">Time: 08:40:00</span>
-            <span id="annotationMark" class="time-annotation"></span>
-            <button id="playButton">Play</button>
+            <div class="article-section">
+            <h3>WRITE UP HERE</h3>
+            <p>During final examinations, students experience varying levels of stress as indicated by their heart rates. Our study reveals two critical moments of peak stress:</p>
+            <ul>
+                <li>At the beginning of the exam, when students first encounter the questions</li>
+                <li>Approximately 20 minutes before the end, as time pressure intensifies</li>
+            </ul>
+            <p>This visualization tracks real-time heart rate data from multiple students, providing insights into the physiological response to academic pressure.</p>
         </div>
     </div>
 </body>
