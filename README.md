@@ -15,6 +15,9 @@ The goal is to transform complex healthcare data into **intuitive, interactive v
 - Understand procedure durations and frequencies  
 - Analyze hierarchical relationships in medical data  
 
+👉 **Live Demo:**  
+https://nglyry.github.io/dsc106-proj3/ 
+
 ---
 
 ## 🎯 Objectives
